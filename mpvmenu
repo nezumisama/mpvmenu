@@ -134,24 +134,66 @@ class COMMAND(OPT):
         rpc.command(*self.args)
 
 
+class OPT_SET_PROP(OPT):
+    def __init__(self, name, prop, value):
+        OPT.__init__(self, name, OPT.NORMAL)
+        self.prop = prop
+        self.value = value
+
+    def activate(self):
+        rpc.set_prop(self.prop, self.value)
+
+
+def get_track_info():
+    info = {"video": [], "audio": [], "sub": []}
+    for i in range(rpc.get_prop("track-list/count")):
+        N = str(i)
+        type_ = rpc.get_prop("track-list/" + N + "/type")
+        track = {
+            "id": rpc.get_prop("track-list/" + N + "/id"),
+            "src-id": rpc.get_prop("track-list/" + N + "/src-id"),
+            "title": rpc.get_prop("track-list/" + N + "/title"),
+            "lang": rpc.get_prop("track-list/" + N + "/lang"),
+            "default": rpc.get_prop("track-list/" + N + "/default"),
+        }
+        if rpc.get_prop("track-list/" + N + "/external"):
+            track["filename"] = rpc.get_prop("track-list/" + N +
+                                             "/external-filename")
+        info[type_].append(track)
+    return info
+
+
 def to_abs_path(path):
     return os.path.normpath(os.path.join(work_dir, path))
 
 
-def load_sub_file():
-    dialog = Gtk.FileChooserDialog("Choose a subtitle file", None,
+def load_file_run_dialog(title):
+    dialog = Gtk.FileChooserDialog(title, None,
                                    Gtk.FileChooserAction.OPEN,
                                    (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
                                     Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
     dialog.set_current_folder(os.path.dirname(
                               to_abs_path(rpc.get_prop("path"))))
-    response = dialog.run()
-    if response == Gtk.ResponseType.OK:
-        rpc.command("sub_add", dialog.get_filename())
-        msg(DEBUG, "Subtitle file to load: ", dialog.get_filename())
+    filename = ""
+    if (dialog.run() == Gtk.ResponseType.OK):
+        filename = dialog.get_filename()
+    dialog.destroy()
+    return filename
+
+
+def load_sub_file():
+    filename = load_file_run_dialog("Choose a subtitle file")
+    if filename:
+        rpc.command("sub_add", filename)
+        msg(DEBUG, "Subtitle file to load: ", filename)
     else:
         msg(DEBUG, "Subtitle file load dlg canceled.")
-    dialog.destroy()
+
+
+def load_file():
+    filename = load_file_run_dialog("Choose a subtitle file")
+    if filename:
+        rpc.command("loadfile", filename)
 
 
 def post_menu_action_factory(act):
@@ -166,6 +208,7 @@ def dl_subs():
     try:
         subprocess.call(["subdownloader", "--rename-subs", "-V", path])
         rpc.command("rescan_external_files")
+        rpc.set_prop("sid", rpc.get_prop("sid") + 1)  # switch to the next sub
     except OSError:
         dialog = Gtk.MessageDialog(None, 0, Gtk.MessageType.INFO,
                                    Gtk.ButtonsType.OK,
@@ -192,7 +235,41 @@ class Layout:
         self.items = args
 
 
+class TracklistLayout(Layout):
+    TYPE_VIDEO = 0
+    TYPE_AUDIO = 1
+    TYPE_SUB = 2
+
+    def __init__(self, name, typ):
+        self.typ = typ
+        self.name = name
+
+    @property
+    def items(self):
+        typ = ("video", "audio", "sub")[self.typ]
+        tracklist = get_track_info()[typ]
+        return list(map(self.track_info_to_opt, tracklist))
+
+    def track_info_to_opt(self, track):
+        prop = ("vid", "aid", "sid")[self.typ]
+        id_ = track["id"]
+        title = " "+track["title"] if track["title"] else " Untitled"
+        lang = " ("+track["lang"]+")" if track["lang"] else ""
+        default = " (default)" if track["default"] else ""
+        name = "{}{}{}{}".format(id_, title,
+                                 lang, default)
+        return OPT_SET_PROP(name, prop, track["id"])
+
+
 layout = Layout(
+    Layout(
+        "File",
+        OPT("Open file", activate=load_file),
+        SEP,
+        COMMAND("Quit mpv", "quit"),
+        COMMAND("Quit mpv (watch later)", "quit_watch_later"),
+        OPT("Quit mpvmenu", activate=exit)
+    ),
     Layout(
         "Playback",
         TOGGLE("Pause", "pause"),
@@ -207,15 +284,35 @@ layout = Layout(
             COMMAND("3 seconds", "seek", "3"),
             COMMAND("10 seconds", "seek", "10"),
             COMMAND("1 minute", "seek", "60")
+        ),
+    ),
+    Layout(
+        "Playlist",
+        COMMAND("Previous", "playlist_prev"),
+        COMMAND("Next", "playlist_next")
+    ),
+    Layout(
+        "Audio",
+        TracklistLayout("Select audio track",
+                        TracklistLayout.TYPE_AUDIO),
+        TOGGLE("Mute", "mute"),
+        Layout(
+            "Audio Filters",
+            FILTER_TOGGLE("Dynamic Range Compression",
+                          "a", "drc", "2:1")
         )
     ),
     Layout(
-        "Audio Filters",
-        FILTER_TOGGLE("Dynamic Range Compression",
-                      "a", "drc", "2:1")
+        "Video",
+        TracklistLayout("Select video track",
+                        TracklistLayout.TYPE_VIDEO),
+        TOGGLE("Fullscreen", "fullscreen")
     ),
     Layout(
         "Subtitles",
+        TracklistLayout("Select subtitle track",
+                        TracklistLayout.TYPE_SUB),
+        TOGGLE("Enabled", "sub-visibility"),
         OPT("Load subtitles from file", activate=load_sub_file),
         OPT("Download subtitles",
             activate=post_menu_action_factory(dl_subs))
