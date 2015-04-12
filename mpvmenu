@@ -51,19 +51,25 @@ class RPC:
             return None
         return json.loads(s)
 
+    def get_result(self):
+        dat = {}
+        while not ("error" in dat):
+            dat = self.recv_data()
+        return dat
+
     def command(self, *args):
         self.send_cmd(*args)
-        dat = self.recv_data()
+        dat = self.get_result()
         success = (dat["error"] == "success")
         return (success, dat["data"] if success else None)
 
     def set_prop(self, prop, value):
         self.send_cmd("set_property", prop, value)
-        return self.recv_data()["error"] == "success"
+        return self.get_result()["error"] == "success"
 
     def get_prop(self, prop):
         self.send_cmd("get_property", prop)
-        dat = self.recv_data()
+        dat = self.get_result()
         return dat["data"] if dat["error"] == "success" else None
 
 
