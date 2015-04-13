@@ -23,6 +23,7 @@ io.popen("/some/path/mpvmenu")
 replacing the path with the one you've put the script in.
 
 ## Requirements
+* GNU/Linux (possibly other *NIX OSes), as JSON RPC is only supported on that.
 * Python 3.
 * Python 3 bindings for Gobject.
 * Gtk 3.
