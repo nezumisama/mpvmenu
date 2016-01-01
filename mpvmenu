@@ -1,24 +1,19 @@
 #!/usr/bin/env python3
 
-import socket
-import os
-import json
-import subprocess
-import os.path
 
+import json
+import logging
+import os
+import os.path
+import socket
+import subprocess
+
+import gi
+gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 
-DEBUG = 2
-WARNING = 1
-INFO = 0
 
-msg_level_names = ["INFO", "WARNING", "DEBUG"]
-MSG_MAX_LEVEL = WARNING
-
-
-def msg(level, *args):
-    if level <= MSG_MAX_LEVEL:
-        print(msg_level_names[level] + ":", " ".join(map(str, args)))
+LOGGER = logging.getLogger(__name__)
 
 
 class RPC:
@@ -94,7 +89,7 @@ class OPT:
         if self.activate_:
             return self.activate_()
         else:
-            msg(DEBUG, "Option", self.name, "activated.")
+            LOGGER.debug("Option {} activated.".format(self.name))
 
 
 SEP = OPT(typ=OPT.SEP)
@@ -107,12 +102,19 @@ class TOGGLE(OPT):
 
     def init(self):
         self.state = rpc.get_prop(self.prop)
-        msg(DEBUG, "initial state for", self.prop, ":", self.state)
+        # In case we got None, because this property "vanished"
+        # for some reason, default to False.
+        if self.state is None:
+            LOGGER.warn("Can't get value for toggle property {}."
+                        " No need to panic though.".format(self.prop))
+            self.state = False
+        LOGGER.debug("initial state for {} : {}."
+                     .format(self.prop, self.state))
 
     def activate(self):
         rpc.set_prop(self.prop, not self.state)
-        msg(DEBUG, "prop", self.prop, str(self.state),
-            "->", str(not self.state))
+        LOGGER.debug("Property {} change: {} -> {}."
+                     .format(self.prop, self.state, not self.state))
 
 
 class FILTER_TOGGLE(OPT):
@@ -191,9 +193,9 @@ def load_sub_file():
     filename = load_file_run_dialog("Choose a subtitle file")
     if filename:
         rpc.command("sub_add", filename)
-        msg(DEBUG, "Subtitle file to load: ", filename)
+        LOGGER.debug("Subtitle file to load: {}.".format(filename))
     else:
-        msg(DEBUG, "Subtitle file load dlg canceled.")
+        LOGGER.debug("Subtitle file load dlg canceled.")
 
 
 def load_file():
@@ -386,13 +388,14 @@ class Menu(Gtk.Menu):
                                       self.on_menu_item_btn)
                 menu.append(menu_item)
 
+logging.basicConfig(level=logging.DEBUG)
 
 rpc = RPC("/var/run/user/{}/mpv.sock".format(os.getuid()))
 
 work_dir = rpc.get_prop("working-directory")
 if not work_dir:
-    msg(WARNING, "can't get mpv's working directory,",
-        "using current working dir of this script.")
+    LOGGER.warn("Can't get mpv's working directory,",
+                "using current working dir of this script.")
     work_dir = os.getcwd()
 
 post_menu_action = None
