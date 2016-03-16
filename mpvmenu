@@ -16,6 +16,9 @@ from gi.repository import Gtk
 LOGGER = logging.getLogger(__name__)
 
 
+WORK_DIR = os.getcwd()
+
+
 class RPC:
     def __init__(self, path):
         self.path = path
@@ -172,7 +175,7 @@ def get_track_info():
 
 
 def to_abs_path(path):
-    return os.path.normpath(os.path.join(work_dir, path))
+    return os.path.normpath(os.path.join(WORK_DIR, path))
 
 
 def load_file_run_dialog(title):
@@ -388,29 +391,37 @@ class Menu(Gtk.Menu):
                                       self.on_menu_item_btn)
                 menu.append(menu_item)
 
-logging.basicConfig(level=logging.DEBUG)
 
-rpc = RPC("/var/run/user/{}/mpv.sock".format(os.getuid()))
+def run_client():
+    global rpc
+    rpc = RPC("/var/run/user/{}/mpv.sock".format(os.getuid()))
 
-work_dir = rpc.get_prop("working-directory")
-if not work_dir:
-    LOGGER.warn("Can't get mpv's working directory,",
-                "using current working dir of this script.")
-    work_dir = os.getcwd()
+    wd = rpc.get_prop("working-directory")
+    if wd:
+        WORK_DIR = wd
+    else:
+        LOGGER.warn("Can't get mpv's working directory,",
+                    "using current working dir of this script.")
 
-post_menu_action = None
+    post_menu_action = None
 
-while True:
-    dat = rpc.recv_data()
-    if not dat:
-        break
-    # dispatch
-    if "event" in dat:
-        # event
-        if dat["event"] == "client-message" and \
-           dat["args"][0] == "popup_menu":
-            menu = Menu(layout)
-            Gtk.main()
-            if post_menu_action:
-                post_menu_action()
-                post_menu_action = None
+    while True:
+        dat = rpc.recv_data()
+        if not dat:
+            break
+        # dispatch
+        if "event" in dat:
+            # event
+            if dat["event"] == "client-message" and \
+               dat["args"][0] == "popup_menu":
+                menu = Menu(layout)
+                Gtk.main()
+                if post_menu_action:
+                    post_menu_action()
+                    post_menu_action = None
+
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.DEBUG)
+    while True:
+        run_client()
