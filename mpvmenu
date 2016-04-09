@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-
+import argparse
 import json
 import logging
 import os
@@ -395,7 +395,7 @@ class Menu(Gtk.Menu):
                 menu.append(menu_item)
 
 
-def run_client():
+def run_client(script_message):
     global rpc
     rpc = RPC("/var/run/user/{}/mpv.sock".format(os.getuid()))
 
@@ -416,7 +416,7 @@ def run_client():
         if "event" in dat:
             # event
             if dat["event"] == "client-message" and \
-               dat["args"][0] == "popup_menu":
+               dat["args"][0] == script_message:
                 menu = Menu(layout)
                 Gtk.main()
                 if post_menu_action:
@@ -425,6 +425,17 @@ def run_client():
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
+    arg_parser = argparse.ArgumentParser(description="Show a menu when an action occurs in MPV.")
+    arg_parser.add_argument("--log-level", type=str, choices=["debug", "info", "warn", "error"],
+                            default="warn", help="logging level")
+    arg_parser.add_argument("--script-message", type=str,
+                            choices=["debug", "info", "warn", "error"], default="popup_menu",
+                            help="custom script message to trigger the menu")
+    args = arg_parser.parse_args()
+
+    logging.basicConfig(level=getattr(logging, args.log_level.upper()),
+                        format="[%(asctime)s] %(levelname)s in %(funcName)s at %(lineno)d:" +
+                        " %(message)s")
+
     while True:
-        run_client()
+        run_client(args.script_message)
