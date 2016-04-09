@@ -1,4 +1,5 @@
-# mpvmenu ![screenshot](screenshot.jpg?raw=true)
+# mpvmenu
+![screenshot](screenshot.jpg?raw=true)
 
 Mpvmenu adds a pop-up menu to mpv, which can be bound to a key or button
 (e.g. to mouse right-click). From this menu you can do things like loading
