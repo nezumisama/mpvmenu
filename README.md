@@ -1,11 +1,12 @@
-# mpvmenu
+# mpvmenup
 ![screenshot](screenshot.jpg?raw=true)
 
 Mpvmenu adds a pop-up menu to mpv, which can be bound to a key or button
 (e.g. to mouse right-click). From this menu you can do things like loading
 external subtitle files, dynamically adding/removing filters and so on.
 
-## Installation Copy the script *mpvmenu* anywhere convenient, if you want. Make
+## Installation
+Copy the script *mpvmenu* anywhere convenient, if you want. Make
 it executable (or you can run it via python 3).
 
 You'll probably want to bind it to a key/button. To do that, bind action
@@ -15,9 +16,12 @@ button, add the following to your *input.conf*:
 
 ``` MOUSE_BTN2 script_message popup_menu ```
 
+## Running
+To run this program, just execute the **mpvmenu** command.
+
 Now when the script runs, and you trigger the action, a pop-up menu should
-appear. If you want to stop it, you can kill it with SIGKILL or SIGINT
-(e.g. press Ctrl+C in the console it's launchec in).
+appear. If you want to stop it, you can kill it with *SIGKILL* or *SIGINT*
+(e.g. press *Ctrl+C* in the console it's launched in).
 
 After running, the script should continue to wait for connection with MPV and
 react for events. If you want it always to run, set it to autostart (details
