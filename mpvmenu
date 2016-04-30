@@ -225,7 +225,8 @@ def dl_subs():
     path = to_abs_path(rpc.get_prop("path"))
     try:
         logging.debug("Calling subdownloader.")
-        status = subprocess.call(["subdownloader", "--rename-subs", "-V", path])
+        status = subprocess.call(["subdownloader", "--rename-subs",
+                                  "-V", path])
         logging.debug("Subdownloader exited with status: {}".format(status))
         rpc.command("rescan_external_files")
         rpc.set_prop("sid", rpc.get_prop("sid") + 1)  # switch to the next sub
@@ -433,16 +434,18 @@ def run_client(script_message):
 
 
 if __name__ == "__main__":
-    arg_parser = argparse.ArgumentParser(description="Show a menu when an action occurs in MPV.")
-    arg_parser.add_argument("--log-level", type=str, choices=["debug", "info", "warn", "error"],
+    arg_parser = argparse.ArgumentParser(description="Show a menu" +
+                                         " when an action occurs in MPV.")
+    arg_parser.add_argument("--log-level", type=str, choices=["debug", "info",
+                                                              "warn", "error"],
                             default="warn", help="logging level")
     arg_parser.add_argument("--script-message", type=str, default="popup_menu",
                             help="custom script message to trigger the menu")
     args = arg_parser.parse_args()
 
     logging.basicConfig(level=getattr(logging, args.log_level.upper()),
-                        format="[%(asctime)s] %(levelname)s in %(funcName)s at %(lineno)d:" +
-                        " %(message)s")
+                        format="[%(asctime)s] %(levelname)s in " +
+                        "%(funcName)s at %(lineno)d: %(message)s")
 
     signal.signal(signal.SIGINT, signal.SIG_DFL)
     while True:
