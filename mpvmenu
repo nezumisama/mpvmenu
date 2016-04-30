@@ -428,8 +428,7 @@ if __name__ == "__main__":
     arg_parser = argparse.ArgumentParser(description="Show a menu when an action occurs in MPV.")
     arg_parser.add_argument("--log-level", type=str, choices=["debug", "info", "warn", "error"],
                             default="warn", help="logging level")
-    arg_parser.add_argument("--script-message", type=str,
-                            choices=["debug", "info", "warn", "error"], default="popup_menu",
+    arg_parser.add_argument("--script-message", type=str, default="popup_menu",
                             help="custom script message to trigger the menu")
     args = arg_parser.parse_args()
 
