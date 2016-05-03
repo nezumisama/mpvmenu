@@ -229,7 +229,13 @@ def dl_subs():
                                   "-V", path])
         logging.debug("Subdownloader exited with status: {}".format(status))
         rpc.command("rescan_external_files")
-        rpc.set_prop("sid", rpc.get_prop("sid") + 1)  # switch to the next sub
+        # Switch to next subtitle.
+        try:
+            sid = int(rpc.get_prop("sid"))
+        except ValueError:
+            sid = None
+        if sid:
+            rpc.set_prop("sid", sid + 1)
     except OSError:
         dialog = Gtk.MessageDialog(None, 0, Gtk.MessageType.INFO,
                                    Gtk.ButtonsType.OK,
