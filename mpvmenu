@@ -448,4 +448,7 @@ if __name__ == "__main__":
 
     signal.signal(signal.SIGINT, signal.SIG_DFL)
     while True:
-        run_client(args.script_message)
+        try:
+            run_client(args.script_message)
+        except ConnectionResetError:
+            pass
