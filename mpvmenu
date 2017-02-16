@@ -11,7 +11,7 @@ import subprocess
 import time
 
 import gi
-gi.require_version('Gtk', '3.0')
+gi.require_version('Gtk', '3.0')  # noqa
 from gi.repository import Gtk
 
 CONNECT_RETRY_DELAY = 2.0
@@ -410,7 +410,7 @@ def run_client(script_message):
 
     wd = rpc.get_prop("working-directory")
     if wd:
-        WORK_DIR = wd
+        WORK_DIR = wd  # noqa
     else:
         LOGGER.warn("Can't get mpv's working directory,",
                     "using current working dir of this script.")
@@ -424,7 +424,7 @@ def run_client(script_message):
             # event
             if dat["event"] == "client-message" and \
                dat["args"][0] == script_message:
-                menu = Menu(layout)
+                menu = Menu(layout)  # noqa
                 Gtk.main()
                 if post_menu_action:
                     logging.debug("Calling post menu action.")
