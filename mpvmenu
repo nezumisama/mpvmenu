@@ -225,7 +225,7 @@ def dl_subs():
     path = to_abs_path(rpc.get_prop("path"))
     try:
         logging.debug("Calling subdownloader.")
-        status = subprocess.call(["subdownloader", "--rename-subs",
+        status = subprocess.call(["subdownloader", "--rename-video",
                                   "-V", path])
         logging.debug("Subdownloader exited with status: {}".format(status))
         rpc.command("rescan-external-files")
